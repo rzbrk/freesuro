@@ -1,0 +1,10 @@
+bootloader/*.elf
+bootloader/*.eep
+bootloader/*.hex
+bootloader/*.lss
+bootloader/*.map
+bootloader/*.o
+bootloader/dep/
+
+flashtool/*.hex
+flashtool/*.pyc
