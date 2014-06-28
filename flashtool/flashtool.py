@@ -113,7 +113,11 @@ def main(argv=sys.argv):
     ser.timeout = const.TIMEOUT
     ser.xonxoff = const.XONXOFF
     ser.rtscts = const.RTSCTS
-    ser.open()
+    try:
+        ser.open()
+    except:
+        print "Cannot open serial port", port
+        exit(1)
 
     # Wait for the bootloader to show up on the serial connection. Therefore,
     # wait for any character received over the serial port.
