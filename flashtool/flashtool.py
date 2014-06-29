@@ -63,17 +63,17 @@ def hexsize(hexfile):
 def main(argv=sys.argv):
     # Get serial port parameter
     try:
-        sys.argv[1]
+        argv[1]
     except IndexError:
         helpmsg()
-    port_regexp = sys.argv[1]
+    port_regexp = argv[1]
 
     # Get hex file parameter
     try:
-        sys.argv[2]
+        argv[2]
     except IndexError:
         helpmsg()
-    hexfile = sys.argv[2]
+    hexfile = argv[2]
 
     # See if serial port exists
     port = searchport(port_regexp)
