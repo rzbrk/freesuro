@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os, sys, serial, time
+import pkg_resources
 import serial.tools.list_ports
 
 #-----------------------------------------------------------------------------
@@ -27,7 +28,16 @@ TIMEOUT = 0
 XONXOFF = 0
 RTSCTS = 0
 
+# Module versions
+PYSERIAL_VERSION = '2.6'
+
 #-----------------------------------------------------------------------------
+
+# Check for module versions
+
+# PySerial
+if pkg_resources.get_distribution("pyserial").version != PYSERIAL_VERSION:
+    print "WARNING: This flashtool is tested only with PySerial", PYSERIAL_VERSION
 
 #####
 #
