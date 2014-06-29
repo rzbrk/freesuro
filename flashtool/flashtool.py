@@ -57,8 +57,7 @@ def searchport(port_regexp):
     for port, desc, hwid in serial.tools.list_ports.grep(port_regexp):
         return port
     else:
-        print "Cannot find serial port", port_regexp
-        exit(1)
+        raise Exception('Cannot find serial port', port_regexp)
 
 #####
 #
@@ -89,8 +88,8 @@ def checksum(hexstr):
     # Compute sum modulo 256
     sum = sum % 256
     
-    # Compute not(sum) + 1
-    sum = 256 - sum
+    # Compute not(sum) + 1 (modulo 256)
+    sum = (256 - sum) % 256
     
     return sum == crc
         
@@ -111,7 +110,7 @@ def readhexfile(hexfile):
     # https://en.wikipedia.org/wiki/Intel_HEX
     # Usually the last line is ':00000001FF'
     if len(lines) < 2:
-        print "Hex file empty or invalid"
+        raise Exception('Hex file empty or invalid')
         exit(1)
     
     # Check if the file is valid intel hex. If not, exit with error
@@ -122,8 +121,7 @@ def readhexfile(hexfile):
 
         # Line must start with ':'
         if l[0:1] != ':':
-            print "File is not a valid intel hex file"
-            exit(1)
+            raise Exception('File is not a valid intel hex file', l)
 
         # If it's not the last line, compute the check sum
         if l != ':00000001FF' and l != '':
@@ -131,13 +129,11 @@ def readhexfile(hexfile):
             
             # There must be an even number of characters without ':'
             if (len(ll) % 2) != 0:
-                print "File is not a valid intel hex file"
-                exit(1)
+                raise Exception('File is not a valid intel hex file', ll)
             
             # Compute the checksum.
             if not checksum(ll):
-                print "Checksum error in intel hex file"
-                exit(1)
+                raise Exception('Checksum error in intel hex file', ll)
 
     # Finally, return the content (lines) of the hex file.
     return lines    
@@ -221,8 +217,7 @@ def main(argv=sys.argv):
     try:
         ser.open()
     except:
-        print "Cannot open serial port", port
-        exit(1)
+        raise Exception('Cannot open serial port', port)
 
     # Wait for the bootloader to show up on the serial connection. Therefore,
     # wait for any character received over the serial port.
