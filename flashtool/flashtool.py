@@ -241,10 +241,14 @@ def main(argv=sys.argv):
         print " FOUND!"
         print
         print "Write hex to Asuro ..."
-        for line in code:
+        for i in range(0,len(code)):
+            line = code[i]
             ser.write(line)
             sys.stdout.write("  ")
-            sys.stdout.write(line)
+            sys.stdout.write(line.rstrip())
+            progress = " (" + str(i+1) + " from " + str(len(code)) + ")"
+            sys.stdout.write(progress)
+            sys.stdout.write("\n")
             # Wait for the TX buffer to be written to the microcontroller.
             # The wait time is calculated from the line length, the baud
             # rate plus additional 5 percent.
