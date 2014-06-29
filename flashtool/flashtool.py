@@ -2,7 +2,30 @@
 
 import os, sys, serial, time
 import serial.tools.list_ports
-import constants as const
+
+#-----------------------------------------------------------------------------
+
+#####
+#
+# Define global constants
+#
+#####
+
+# Maximum program size in flash (reduced by the size of the bootloader
+# program).
+MAX_PROG_SIZE = 7000
+
+# Wait time for the bootloader (multiple of 0.1 seconds)
+BOOTL_TIMEOUT = 50
+
+# Serial port settings
+BAUD = 2400
+BYTESIZE = 8
+PARITY = 'N'
+STOPBITS = 1
+TIMEOUT = 0
+XONXOFF = 0
+RTSCTS = 0
 
 #-----------------------------------------------------------------------------
 
@@ -157,8 +180,8 @@ def main(argv=sys.argv):
     size = hexsize(code)
 
     # Check if hex file is too large. If so, exit with error message.
-    if size > const.MAX_PROG_SIZE:
-        print "Program file size >", const.MAX_PROG_SIZE, "Bytes. Too large for Atmega8"
+    if size > MAX_PROG_SIZE:
+        print "Program file size >", MAX_PROG_SIZE, "Bytes. Too large for Atmega8"
         exit(1)
 
     print
@@ -178,13 +201,13 @@ def main(argv=sys.argv):
     # Open serial port
     ser = serial.Serial()
     ser.port = port
-    ser.baudrate = const.BAUD
-    ser.bytesize = const.BYTESIZE
-    ser.parity = const.PARITY
-    ser.stopbits = const.STOPBITS
-    ser.timeout = const.TIMEOUT
-    ser.xonxoff = const.XONXOFF
-    ser.rtscts = const.RTSCTS
+    ser.baudrate = BAUD
+    ser.bytesize = BYTESIZE
+    ser.parity = PARITY
+    ser.stopbits = STOPBITS
+    ser.timeout = TIMEOUT
+    ser.xonxoff = XONXOFF
+    ser.rtscts = RTSCTS
     try:
         ser.open()
     except:
@@ -194,7 +217,7 @@ def main(argv=sys.argv):
     # Wait for the bootloader to show up on the serial connection. Therefore,
     # wait for any character received over the serial port.
     sys.stdout.write("Wait for the bootloader ")
-    timeout = const.BOOTL_TIMEOUT
+    timeout = BOOTL_TIMEOUT
     found_bootl = False
     while timeout > 0 and not found_bootl:
         sys.stdout.write(".")
@@ -218,7 +241,7 @@ def main(argv=sys.argv):
             # Wait for the TX buffer to be written to the microcontroller.
             # The wait time is calculated from the line length, the baud
             # rate plus additional 5 percent.
-            wait = 1.05 * 10 * len(line) / const.BAUD
+            wait = 1.05 * 10 * len(line) / BAUD
             time.sleep (wait)
         print
         print "Done!"
