@@ -15,6 +15,7 @@ import serial.tools.list_ports
 # Maximum program size in flash (reduced by the size of the bootloader
 # program).
 MAX_PROG_SIZE = 7000
+MUC = 'Atmega8L'
 
 # Wait time for the bootloader (multiple of 0.1 seconds)
 BOOTL_TIMEOUT = 50
@@ -187,7 +188,8 @@ def main(argv=sys.argv):
 
     # Check if hex file is too large. If so, exit with error message.
     if size > MAX_PROG_SIZE:
-        print "Program file size >", MAX_PROG_SIZE, "Bytes. Too large for Atmega8"
+        print "Program file size", size, "Bytes >", MAX_PROG_SIZE, "Bytes."
+        print "Too large for", MUC
         exit(1)
 
     print
