@@ -22,7 +22,10 @@ ASMFLAGS += -x assembler-with-cpp -Wa,-gdwarf2
 
 ## Linker flags
 LDFLAGS = $(COMMON)
-LDFLAGS += -Wl,--section-start=.text=0x1c00 -Wl,-Map=BootLoaderSerial.map
+# Boot loader section 512 words/1024 bytes
+#LDFLAGS += -Wl,--section-start=.text=0x1c00 -Wl,-Map=BootLoaderSerial.map
+# Boot loader section 1024 words/2048 bytes
+LDFLAGS += -Wl,--section-start=.text=0x1800 -Wl,-Map=BootLoaderSerial.map
 
 
 ## Intel Hex file production flags
