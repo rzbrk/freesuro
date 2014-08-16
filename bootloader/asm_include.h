@@ -20,9 +20,9 @@
 #define temp3 r18                       // working register
 #define temp4 r19                       // working register
 
-#define STARTCHAR ':'                // start char for a record within a
+#define STARTCHAR ':'                   // start char for a record within a
                                         // *.hex file
-#define SEKUNDE 2                       // for loop
+#define SECONDS 2                       // for loop
 
 #define MAXRECORDS 17                   // maximum number of data in record
 
