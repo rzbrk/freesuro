@@ -8,9 +8,9 @@
 /******************************************************************************
     register definitions
 ******************************************************************************/
-#define CHAR_GET_REG r24                // register for returning char 
-#define CHAR_PUT_REG r25                // register for returning char
-#define CHAR_RET_REG r24                // register for returning char
+#define CHAR_GET_REG r24                // register for returning a char 
+#define CHAR_PUT_REG r25                // register for returning a char
+#define CHAR_RET_REG r24                // register for returning a char
 
 #define INT_REG_H r25                   // register for int high byte
 #define INT_REG_L r24                   // register for int low  byte
