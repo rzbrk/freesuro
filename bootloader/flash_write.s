@@ -2,91 +2,89 @@
 #include <avr/io.h>
 #include "asm_include.h"
 
-            .section .text
+    .section .text
+    .global flash_write_puffer
 
-			.global flash_write_puffer
-
-/************************************************
-
-	flash-seite schreiben: 
-	
-	flash-adresse im x-reg
-	ram-adresse von datenpuffer im y-reg
-
-*************************************************/
+/******************************************************************************
+    Write fash page.
+    
+    Flash page address:             register x
+    RAM address from data buffer:   register y
+******************************************************************************/
 flash_write_puffer:
-			in 		temp1, IO_REG(SREG)		// statusregister retten
-			push	temp1					// auf dem stack sichern
-			cli								// interrupts sperren
+    in      temp1, IO_REG(SREG)             // save status register
+    push    temp1                           // ... to stack
+    cli                                     // disable interrupts
 /*
-	flash-adresse sichern
+    Save flash address (register Z)
 */
-			push	ZH
-			push	ZL
+    push    ZH
+    push    ZL
+
 /*
-	eeprom zugriffe?
+    Any access to eeprom going on?
 */
 floop1:
-			sbic	IO_REG(EECR), EEWE		// eeprom zugriffe?
-			rjmp	floop1
+    sbic    IO_REG(EECR), EEWE
+    rjmp    floop1
+
 /*
-	flash page immer erst löschen flash-adresse im x-register
+    Always delete flash before rewriting it. Flash address in register X.
 */
-			ldi		temp1, (BIT(SPMEN) + BIT(PGERS))
-			rcall	flash_wait				// warte bis fertig
+    ldi     temp1, (BIT(SPMEN) + BIT(PGERS))
+    rcall   flash_wait                      // wait until complete
+
 /*
-	counter init
+    initialize counter
 */
-			ldi		temp2, (SPM_PAGESIZE/2)	// wir schreiben immer 2byte = 1word
+    ldi     temp2, (SPM_PAGESIZE/2)         // writing in portions of
+                                            // 2 byte = 1 word
 /*
-	inhalt vom ram ins flash kopieren
+    Copy data RAM --> flash
 */
 flash_fill:
-			ld		r0, Y+					// zwei byte aus dem ram holen
-			ld		r1, Y+
-			ldi		temp1, BIT(SPMEN)		// steuerbit
-			rcall	flash_wait				// warte
-			dec		temp2					// zähler dekrementieren
-			breq	floop2					// 0=fertig kopiert
-			adiw	ZL, 2					// auf nächste adresse zeigen
-			rjmp	flash_fill				// und weiter
+    ld      r0, Y+                          // take two byte from RAM
+    ld      r1, Y+
+    ldi     temp1, BIT(SPMEN)               // control bit
+    rcall   flash_wait                      // wait until complete
+    dec     temp2                           // decrement counter
+    breq    floop2                          // 0 => copying completed
+    adiw    ZL, 2                           // point to next address
+    rjmp    flash_fill                      // ... and go ahaed
+
 /*
-	flash-adresse zurückholen
+    recover flash address from stack
 */
 floop2:
-			pop		ZL
-			pop		ZH
-/*
-	aus dem ram kopierte daten ins flash schreiben
-*/
-			ldi		temp1, (BIT(SPMEN) + BIT(PGWRT))
-			rcall	flash_wait
-/*
-	re-enable rww section
-*/
-			ldi		temp1, (BIT(SPMEN) + BIT(RWWSRE))
-			rcall	flash_wait
-/*
-	register zurückholen
-*/
-			pop		temp1					// statusregister vom stack laden
-			out		IO_REG(SREG), temp1		// startusregister zurück
-			ret
+    pop     ZL
+    pop     ZH
 
-/****************************
-	warte bis spm ausgeführt
-*****************************/
+/*
+    write copied data in RAM to flash
+*/
+    ldi     temp1, (BIT(SPMEN) + BIT(PGWRT))
+    rcall   flash_wait
+
+/*
+    re-enable rww section
+*/
+    ldi     temp1, (BIT(SPMEN) + BIT(RWWSRE))
+    rcall   flash_wait
+/*
+    Recover status register from stack
+*/
+    pop     temp1                           // recover status register
+    out     IO_REG(SREG), temp1
+    ret
+
+/******************************************************************************
+    Wait until SPM is completed
+******************************************************************************/
 flash_wait:
-			out		IO_REG(SPMCR), temp1	// ins steuerregister schreiben
-			spm
+    out     IO_REG(SPMCR), temp1            // write to control register
+    spm
 flash_wait2:
-			in		temp1, IO_REG(SPMCR)	// lese steuerregister
-			sbrc	temp1, SPMEN			// fertig?
-			rjmp	flash_wait2				// nein
-			ret								// ja
-
-
-
-
-
-
+    in      temp1, IO_REG(SPMCR)            // read control register
+    sbrc    temp1, SPMEN                    // completed?
+    rjmp    flash_wait2                     //  no
+    ret                                     //  yes
