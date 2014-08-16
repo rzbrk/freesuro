@@ -1,4 +1,4 @@
-
+    
 #include <avr/io.h>
 #include "asm_include.h"
 
@@ -6,9 +6,10 @@
     .global flash_get
 
 /******************************************************************************
-    Wenn this routine was called, the first character of the hex file was
-    receipt. Now, read in the rest of the hex file and write it to flash. The
-    receipt program will always be stored in the flash as from address 0.
+    Wenn this routine was called, the first character of the hex file ":" was
+    already receipt. Now, read in the rest of the hex file and write it to
+    flash. The receipt program will always be stored in the flash as from
+    address 0.
 ******************************************************************************/
 flash_get:
     rcall   buffer_init                 // init flash buffer pointer & counter
@@ -28,11 +29,11 @@ next_wert:
     add     temp1, INT_REG_L            // aktuellen wert zur checksum addieren
     sts     check_sum, temp1            // checksum wieder abspeichern
 	
-    lds     XL, puffer_adr              // aktuelle flash-pufferadresse laden
-    lds     XH, puffer_adr+1            // x-reg als pointer
+    lds     XL, buffer_adr              // aktuelle flash-pufferadresse laden
+    lds     XH, buffer_adr+1            // x-reg als pointer
     st      X+, INT_REG_L               // wert im flash-puffer abspeichen
-    sts     puffer_adr, XL              // puffer-adresse wieder sichern
-    sts     puffer_adr+1, XH
+    sts     buffer_adr, XL              // puffer-adresse wieder sichern
+    sts     buffer_adr+1, XH
 
     lds     XH, flash_count             // anzahl der werte im flash-puffer
     inc     XH                          // plus einem neuen wert
@@ -127,9 +128,9 @@ buffer_init:
     clr     temp1
     sts     flash_count, temp1
     ldi     temp1, lo8(flash_buffer)
-    sts     puffer_adr, temp1
+    sts     buffer_adr, temp1
     ldi     temp1, hi8(flash_buffer)
-    sts     puffer_adr+1, temp1
+    sts     buffer_adr+1, temp1
     ret
 	
 /***********************************
@@ -137,7 +138,7 @@ buffer_init:
 ************************************/
 save_buffer:
     rcall   write_buffer
-    rcall   puffer_init
+    rcall   buffer_init
     ret
 
 /**************************

@@ -17,5 +17,5 @@ volatile unsigned char rec_count;           // no of byte in record
 volatile unsigned char ist_count;           // no of byte read in
 
 volatile unsigned char flash_count;         // no of byte in flash buffer
-volatile unsigned int  puffer_adr;          // current address of flash buffer
+volatile unsigned int  buffer_adr;          // current address of flash buffer
 
