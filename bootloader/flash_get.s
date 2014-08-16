@@ -12,11 +12,11 @@
     the flash as from address 0. 
 ******************************************************************************/ 
 flash_get:
-    rcall   buffer_init                 // init flash buffer pointer & counter
+    rcall   buffer_init                 // init page buffer pointer & counter
 
 start_new:
     rcall   get_rec_len                 // read record len (no of data bytes)
-    rcall   get_flash_addr              // read flash address (load offset)
+    rcall   get_flash_addr              // read load offset of the record
 
 /*
     The data type field of a record in a hex file is 0x00 for a normal
@@ -33,33 +33,40 @@ start_new:
                                         // so far
 /*
     Up from here the data bytes of the record are read in until the end
-    of a record is reached.
+    of a record is reached. The bytes are saved in the page buffer.
 */
 next_byte:
     rcall   get_byte                    // read in byte (already converted to
-                                        // "real" hex
-    lds     temp1, check_sum            // load checksum value
-    add     temp1, INT_REG_L            // update checksum with byte in temp1
-    sts     check_sum, temp1            // write back checksum
+                                        // "real" hex, stored in INT_REG_L
+    lds     temp1, check_sum            // load checksum => temp1
+    add     temp1, INT_REG_L            // update checksum with byte read in
+    sts     check_sum, temp1            // write back temp1 => checksum
 	
-    lds     XL, buffer_addr              // load current flash buffer address
-    lds     XH, buffer_addr+1            // register X as pointer
-    st      X+, INT_REG_L               // save value to flash buffer
-    sts     buffer_addr, XL              // write back buffer address
+    lds     XL, buffer_addr             // load current page buffer address
+    lds     XH, buffer_addr+1           // register X as pointer
+    st      X+, INT_REG_L               // save byte read in to page buffer
+    sts     buffer_addr, XL             // write back buffer address
     sts     buffer_addr+1, XH
 
-    lds     XH, flash_count             // no of values in flash buffer
+/*
+    Increment the page buffer counter and see, if the page buffer is full.
+    When page buffer is full, the save the buffer to flash.
+*/
+    lds     XH, buffer_count            // no of bytes in page buffer
     inc     XH                          // plus one new value
-    sts     flash_count, XH             // write back number
-    cpi     XH, SPM_PAGESIZE            // page in flash buffer full?
+    sts     buffer_count, XH            // write back number
+    cpi     XH, SPM_PAGESIZE            // page buffer full?
     brne    dont_save                   //  no  => don't save yet
-    rcall   save_buffer                 //  yes => save page to flash
+    rcall   save_buffer                 //  yes => save page bufferto flash
 
+/*
+    Increment the counter for the bytes read_in (read_count).
+*/
 dont_save:
-    lds     XH,read_count               // no of saved values in record
+    lds     XH, read_count              // no of saved values of record
     inc     XH                          // plus one value
     sts     read_count, XH              // write back again
-    lds     XL, rec_count               // target number of values in current
+    lds     XL, rec_len                 // target number of values in current
                                         // record
     cp      XL, XH                      // all data bytes of record read in?
     brne    next_byte                   //  no => data left in record; go ahead
@@ -80,7 +87,7 @@ wait_startchar:                         // wait on start char of new record
     rjmp    start_new                   //  yes => read in new record
 
 data_end:
-    lds     XH, flash_count             // anzahl der werte im flash-puffer laden
+    lds     XH, buffer_count             // anzahl der werte im flash-puffer laden
     tst     XH                          // noch werte im puffer?
     breq    buffer_empty                 // nein
     rcall   write_buffer                // ja, die restlichen byte im puffer schreiben
@@ -91,10 +98,11 @@ buffer_empty:
     brne    buffer_empty					
     ret
 
-/*****************************************
-	lese zwei byte ascii-hex vom com-port
-	und wandel sie in eine zahl (1 byte)
-******************************************/
+/******************************************************************************
+    Read in two ascii-hex characters from the serial port ans convert them
+    to a "real" hex file. The result is stored to variable INT_REG_L (in
+    routine ascii_hex).
+******************************************************************************/
 get_byte:
     ldi     ZL, lo8(int_buffer)				
     ldi     ZH, hi8(int_buffer)
@@ -110,21 +118,23 @@ get_byte:
     ret
 
 /******************************************************************************
-    Read the length of the record in the hex file. The length is given as a
-    hex value (two ascii chars) right after the record mark (":"). The length
-    is also the first value for the checksum of the record.
+    Read the length of the record in the hex file and save the value to the
+    variable rec_len. The length is given as a hex value (two ascii chars)
+    right after the record mark (":"). The length is also the first value for
+    the checksum of the record.
 ******************************************************************************/
 get_rec_len:
     rcall   get_byte
     cpi     INT_REG_L, MAXRECLEN        // max 16 data bytes per record
     brge    error_trx                   // error if > 16!
-    sts     rec_count, INT_REG_L        // save record length
+    sts     rec_len, INT_REG_L          // save record length
     sts     check_sum, INT_REG_L        // initialize checksum		
     ret
 
 /******************************************************************************
     Read the flash address of the record (load offset). The address is a
-    16 bit value and also counts to the checksum.
+    16 bit value and counts to the checksum. Beside this, the address is not
+    needed for the bootloader.
 ******************************************************************************/
 get_flash_addr:
     rcall   get_byte                    // first byte
@@ -137,16 +147,16 @@ get_flash_addr:
     sts     check_sum, XL
     ret
 
-/**********************************
-	initialisiere den flash-puffer
-***********************************/
+/******************************************************************************
+    Initialize the flash buffer.
+******************************************************************************/
 buffer_init:
     clr     temp1
-    sts     flash_count, temp1
+    sts     buffer_count, temp1          // buffer_count = 0
     ldi     temp1, lo8(flash_buffer)
-    sts     buffer_addr, temp1
+    sts     buffer_addr, temp1          // low byte of flash buffer addr
     ldi     temp1, hi8(flash_buffer)
-    sts     buffer_addr+1, temp1
+    sts     buffer_addr+1, temp1        // high byte of flash buffer addr
     ret
 	
 /***********************************
