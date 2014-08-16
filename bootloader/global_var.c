@@ -14,7 +14,7 @@ volatile unsigned int  page_adr;            // flashpage address
 volatile unsigned char check_sum;           // chechsum for record of hex file
 
 volatile unsigned char rec_count;           // no of byte in record
-volatile unsigned char ist_count;           // no of byte read in
+volatile unsigned char read_count;           // no of byte read in
 
 volatile unsigned char flash_count;         // no of byte in flash buffer
 volatile unsigned int  buffer_adr;          // current address of flash buffer

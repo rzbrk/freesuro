@@ -18,10 +18,10 @@ start_new:
     rcall   get_rec_val                 // no of data byte in current record
     rcall   get_flash_adr               // read in flash address
     rcall   get_byte                    // data type in record
-    tst     INT_REG_L                   // <> 0 = datenende
-    brne    data_end                  // ende der datenübertragung
-    clr     temp1                       // lösche datencounter
-    sts     ist_count, temp1            // noch keine record-daten eingelesen
+    tst     INT_REG_L                   // if != 0 => data end
+    brne    data_end                    // ... end data transmission
+    clr     temp1                       // erase data counter
+    sts     read_count, temp1            // noch keine record-daten eingelesen
 
 next_byte:
     rcall   get_byte                    // ein byte einlesen und kovertieren
@@ -43,9 +43,9 @@ next_byte:
     rcall   save_buffer                 // ja, seite im flash abspeichern
 
 dont_save:
-    lds     XH,ist_count                // anzahl der gespeicherten record-werte
+    lds     XH,read_count                // anzahl der gespeicherten record-werte
     inc     XH                          // plus ein wert
-    sts     ist_count, XH               // und wieder abspeichern
+    sts     read_count, XH               // und wieder abspeichern
     lds     XL, rec_count               // sollanzahl der werte im aktuellen record
     cp      XL, XH                      // alle datenbytes des records eingelesen?
     brne    next_byte                   // nein, es sind noch daten im record, weitermachen
