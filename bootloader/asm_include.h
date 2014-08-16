@@ -20,7 +20,7 @@
 #define temp3 r18                       // working register
 #define temp4 r19                       // working register
 
-#define STARTZEICHEN ':'                // start char for a record within a
+#define STARTCHAR ':'                // start char for a record within a
                                         // *.hex file
 #define SEKUNDE 2                       // for loop
 

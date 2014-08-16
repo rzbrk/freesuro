@@ -60,7 +60,7 @@ warte_start:							// warte auf startzeichen für neuen record
 	rcall	wait_serial					// hole zeichen vom com-port	
 	tst		CHAR_GET_REG				// teste zeichen
 	breq	error_trx					// kein zeichen = fehler bei der datenübertragung
-	cpi		CHAR_GET_REG, STARTZEICHEN	// ist es das startzeichen?
+	cpi		CHAR_GET_REG, STARTCHAR	    // ist es das startzeichen?
 	brne	warte_start					// nein, dann warte
 	rjmp	starte_neu					// neuen record einlesen
 	

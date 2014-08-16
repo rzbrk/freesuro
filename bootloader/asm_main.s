@@ -81,7 +81,7 @@ loop2:
 */
 loop3:
     rcall   wait_serial                     // wait for char on serial port
-    cpi     CHAR_GET_REG, STARTZEICHEN      // equal start char?
+    cpi     CHAR_GET_REG, STARTCHAR         // equal start char?
     breq    start_rec                       // yes: start data transmission
 
 /*
