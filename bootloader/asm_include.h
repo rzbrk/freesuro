@@ -24,7 +24,11 @@
                                         // *.hex file
 #define SECONDS 2                       // for loop
 
-#define MAXRECORDS 17                   // maximum number of data in record
+#define MAXRECLEN 17                    // maximum number of data in record
+                                        // (= 16) plus 1. This is necessary,
+                                        // because there is no brgt, only a
+                                        // brge (break-if-greater-or-equal)
+                                        // command in AVR assembler.
 
 #define BATT_MIN 770                    // lower battery treshold,
                                         // approx. 4,2V

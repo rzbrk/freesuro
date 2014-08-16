@@ -6,23 +6,35 @@
     .global flash_get
 
 /******************************************************************************
-    Wenn this routine was called, the first character of the hex file ":" was
-    already receipt. Now, read in the rest of the hex file and write it to
-    flash. The receipt program will always be stored in the flash as from
-    address 0.
-******************************************************************************/
+    When this routine was called, the first character of the hex file ":" 
+    (the record mark) was already receipt. Now, read in the rest of the hex
+    file and write it to flash. The receipt program will always be stored in
+    the flash as from address 0. 
+******************************************************************************/ 
 flash_get:
     rcall   buffer_init                 // init flash buffer pointer & counter
 
 start_new:
-    rcall   get_rec_val                 // no of data byte in current record
-    rcall   get_flash_adr               // read in flash address
-    rcall   get_byte                    // data type in record
-    tst     INT_REG_L                   // if != 0 => data end
-    brne    data_end                    // ... end data transmission
-    clr     temp1                       // erase data counter
-    sts     read_count, temp1           // no data read in so far
+    rcall   get_rec_len                 // read record len (no of data bytes)
+    rcall   get_flash_addr              // read flash address (load offset)
 
+/*
+    The data type field of a record in a hex file is 0x00 for a normal
+    record. Only the last line is :00000001FF with a data type field 0x01.
+    Hence, if a data type field != 0x00 is receipt, the data transmission
+    can be finished.
+*/
+    rcall   get_byte                    // read data type field of record
+    tst     INT_REG_L                   // if != 0x00 => end of file record
+    brne    data_end                    // ... end data transmission
+
+    clr     temp1                       // temp1 = 0
+    sts     read_count, temp1           // read_count = 0; no data read in
+                                        // so far
+/*
+    Up from here the data bytes of the record are read in until the end
+    of a record is reached.
+*/
 next_byte:
     rcall   get_byte                    // read in byte (already converted to
                                         // "real" hex
@@ -30,11 +42,11 @@ next_byte:
     add     temp1, INT_REG_L            // update checksum with byte in temp1
     sts     check_sum, temp1            // write back checksum
 	
-    lds     XL, buffer_adr              // load current flash buffer address
-    lds     XH, buffer_adr+1            // register X as pointer
+    lds     XL, buffer_addr              // load current flash buffer address
+    lds     XH, buffer_addr+1            // register X as pointer
     st      X+, INT_REG_L               // save value to flash buffer
-    sts     buffer_adr, XL              // write back buffer address
-    sts     buffer_adr+1, XH
+    sts     buffer_addr, XL              // write back buffer address
+    sts     buffer_addr+1, XH
 
     lds     XH, flash_count             // no of values in flash buffer
     inc     XH                          // plus one new value
@@ -97,28 +109,29 @@ get_byte:
     rcall   ascii_hex
     ret
 
-/*****************************************
-	lese anzahl der datenbytes im record
-	und initialisiere die record-checksum
-******************************************/
-get_rec_val:
+/******************************************************************************
+    Read the length of the record in the hex file. The length is given as a
+    hex value (two ascii chars) right after the record mark (":"). The length
+    is also the first value for the checksum of the record.
+******************************************************************************/
+get_rec_len:
     rcall   get_byte
-    cpi     INT_REG_L, MAXRECORDS       // maximal 16 datenbyte in einem record
-    brge    error_trx                   // fehler anzahl > 16!
-    sts     rec_count, INT_REG_L        // anzahl abspeichern
-    sts     check_sum, INT_REG_L        // checksum init		
+    cpi     INT_REG_L, MAXRECLEN        // max 16 data bytes per record
+    brge    error_trx                   // error if > 16!
+    sts     rec_count, INT_REG_L        // save record length
+    sts     check_sum, INT_REG_L        // initialize checksum		
     ret
 
-/********************************
-	lese die flash-adresse
-	und addiere sie zur checksum
-*********************************/
-get_flash_adr:
-    rcall   get_byte
+/******************************************************************************
+    Read the flash address of the record (load offset). The address is a
+    16 bit value and also counts to the checksum.
+******************************************************************************/
+get_flash_addr:
+    rcall   get_byte                    // first byte
     lds     XL, check_sum
     add     XL, INT_REG_L
     sts     check_sum, XL
-    rcall   get_byte
+    rcall   get_byte                    // second byte
     lds     XL, check_sum
     add     XL, INT_REG_L
     sts     check_sum, XL
@@ -131,9 +144,9 @@ buffer_init:
     clr     temp1
     sts     flash_count, temp1
     ldi     temp1, lo8(flash_buffer)
-    sts     buffer_adr, temp1
+    sts     buffer_addr, temp1
     ldi     temp1, hi8(flash_buffer)
-    sts     buffer_adr+1, temp1
+    sts     buffer_addr+1, temp1
     ret
 	
 /***********************************
