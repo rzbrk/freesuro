@@ -1,13 +1,13 @@
 freesuro
 ========
 
-Free and open source Asuro Bootloader and flashing tool
+Free and open source Asuro bootloader and flashing tool
 
 Important Notice!!
 ------------------
 
-This software is currently completly untested and may not work
-at all! It is not recommended to use it!
+This software is currently under heavy development and may not work
+at all! Use it for testing purpose only.
 
 Setting of Fuse Bits
 --------------------

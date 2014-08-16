@@ -5,7 +5,7 @@
 volatile unsigned char flash_buffer[SPM_PAGESIZE];
 volatile unsigned char int_buffer[3];
 
-#volatile unsigned char wait_send[]={"\n\r\n\r(c)Arexx Netherlands [BL-V1.03] / Wait...\n\r"};
+//volatile unsigned char wait_send[]={"\n\r\n\r(c)Arexx Netherlands [BL-V1.03] / Wait...\n\r"};
 volatile unsigned char wait_send[]
     = {"\n\r\n\rFreesuro Bootloader / Wait...\n\r"};
 volatile unsigned char flash_ok[] = {"\n\rData transfer successfully!"};
