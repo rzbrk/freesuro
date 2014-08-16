@@ -21,48 +21,51 @@ start_new:
     tst     INT_REG_L                   // if != 0 => data end
     brne    data_end                    // ... end data transmission
     clr     temp1                       // erase data counter
-    sts     read_count, temp1            // noch keine record-daten eingelesen
+    sts     read_count, temp1           // no data read in so far
 
 next_byte:
-    rcall   get_byte                    // ein byte einlesen und kovertieren
-    lds     temp1, check_sum            // checksum laden
-    add     temp1, INT_REG_L            // aktuellen wert zur checksum addieren
-    sts     check_sum, temp1            // checksum wieder abspeichern
+    rcall   get_byte                    // read in byte (already converted to
+                                        // "real" hex
+    lds     temp1, check_sum            // load checksum value
+    add     temp1, INT_REG_L            // update checksum with byte in temp1
+    sts     check_sum, temp1            // write back checksum
 	
-    lds     XL, buffer_adr              // aktuelle flash-pufferadresse laden
-    lds     XH, buffer_adr+1            // x-reg als pointer
-    st      X+, INT_REG_L               // wert im flash-puffer abspeichen
-    sts     buffer_adr, XL              // puffer-adresse wieder sichern
+    lds     XL, buffer_adr              // load current flash buffer address
+    lds     XH, buffer_adr+1            // register X as pointer
+    st      X+, INT_REG_L               // save value to flash buffer
+    sts     buffer_adr, XL              // write back buffer address
     sts     buffer_adr+1, XH
 
-    lds     XH, flash_count             // anzahl der werte im flash-puffer
-    inc     XH                          // plus einem neuen wert
-    sts     flash_count, XH             // anzahl wieder abspeichern
-    cpi     XH, SPM_PAGESIZE            // eine seite im flash-puffer voll?
-    brne    dont_save                   // nein, dann noch nicht speichern
-    rcall   save_buffer                 // ja, seite im flash abspeichern
+    lds     XH, flash_count             // no of values in flash buffer
+    inc     XH                          // plus one new value
+    sts     flash_count, XH             // write back number
+    cpi     XH, SPM_PAGESIZE            // page in flash buffer full?
+    brne    dont_save                   //  no  => don't save yet
+    rcall   save_buffer                 //  yes => save page to flash
 
 dont_save:
-    lds     XH,read_count                // anzahl der gespeicherten record-werte
-    inc     XH                          // plus ein wert
-    sts     read_count, XH               // und wieder abspeichern
-    lds     XL, rec_count               // sollanzahl der werte im aktuellen record
-    cp      XL, XH                      // alle datenbytes des records eingelesen?
-    brne    next_byte                   // nein, es sind noch daten im record, weitermachen
+    lds     XH,read_count               // no of saved values in record
+    inc     XH                          // plus one value
+    sts     read_count, XH              // write back again
+    lds     XL, rec_count               // target number of values in current
+                                        // record
+    cp      XL, XH                      // all data bytes of record read in?
+    brne    next_byte                   //  no => data left in record; go ahead
 
-    rcall   get_byte                    // der letzte record-wert ist die checksum
-    lds     INT_REG_H, check_sum        // lade die aktuelle checksum
-    neg     INT_REG_H                   // bilde das zweierkomplement
-    cp      INT_REG_L, INT_REG_H        // vergleiche die checksum
-    brne    error_trx                   // fehler die werte sind nicht gleich!
+    rcall   get_byte                    // last record value is checksum
+    lds     INT_REG_H, check_sum        // load current checksum
+    neg     INT_REG_H                   // compute complement on two
+    cp      INT_REG_L, INT_REG_H        // compare checksum
+    brne    error_trx                   // error, if computed and transmitted
+                                        // checksum are not equal
 
-wait_startchar:                            // warte auf startzeichen für neuen record
-    rcall   wait_serial                 // hole zeichen vom com-port	
-    tst     CHAR_GET_REG                // teste zeichen
-    breq    error_trx                   // kein zeichen = fehler bei der datenübertragung
-    cpi     CHAR_GET_REG, STARTCHAR     // ist es das startzeichen?
-    brne    wait_startchar                 // nein, dann warte
-    rjmp    start_new                  // neuen record einlesen
+wait_startchar:                         // wait on start char of new record
+    rcall   wait_serial                 // read in char from serial port	
+    tst     CHAR_GET_REG                // test char
+    breq    error_trx                   // noc har => data transmission failed
+    cpi     CHAR_GET_REG, STARTCHAR     // is it equal start char ":"
+    brne    wait_startchar              //  no => wait
+    rjmp    start_new                   //  yes => read in new record
 
 data_end:
     lds     XH, flash_count             // anzahl der werte im flash-puffer laden
