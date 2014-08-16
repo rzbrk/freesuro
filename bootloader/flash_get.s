@@ -7,8 +7,8 @@
 
 /******************************************************************************
     When this routine was called, the first character of the hex file ":" 
-    (the record mark) was already receipt. Now, read in the rest of the hex
-    file and write it to flash. The receipt program will always be stored in
+    (the record mark) was already received. Now, read in the rest of the hex
+    file and write it to flash. The received program will always be stored in
     the flash as from address 0. 
 ******************************************************************************/ 
 flash_get:
@@ -21,7 +21,7 @@ start_new:
 /*
     The data type field of a record in a hex file is 0x00 for a normal
     record. Only the last line is :00000001FF with a data type field 0x01.
-    Hence, if a data type field != 0x00 is receipt, the data transmission
+    Hence, if a data type field != 0x00 was received, the data transmission
     can be finished.
 */
     rcall   get_byte                    // read data type field of record
@@ -50,7 +50,7 @@ next_byte:
 
 /*
     Increment the page buffer counter and see, if the page buffer is full.
-    When page buffer is full, the save the buffer to flash.
+    When page buffer is full, save the buffer to flash.
 */
     lds     XH, buffer_count            // no of bytes in page buffer
     inc     XH                          // plus one new value
@@ -60,7 +60,9 @@ next_byte:
     rcall   save_buffer                 //  yes => save page bufferto flash
 
 /*
-    Increment the counter for the bytes read_in (read_count).
+    Increment the counter for the bytes read_in (read_count). When the end of
+    the record is reached, check for checksum errors. Then, wait for the
+    record mark character (":") of the next record.
 */
 dont_save:
     lds     XH, read_count              // no of saved values of record
@@ -69,10 +71,16 @@ dont_save:
     lds     XL, rec_len                 // target number of values in current
                                         // record
     cp      XL, XH                      // all data bytes of record read in?
-    brne    next_byte                   //  no => data left in record; go ahead
+    brne    next_byte                   //  no => read in another byte
 
+/*
+    The checksum read in from the record is stored to INT_REG_L. The checksum
+    computed from the record bytes individually read in is stored to INT_REG_H.
+    Then, both variables are compared.
+*/
     rcall   get_byte                    // last record value is checksum
-    lds     INT_REG_H, check_sum        // load current checksum
+                                        // => INT_REG_L
+    lds     INT_REG_H, check_sum        // load current checksum => INT_REG_H
     neg     INT_REG_H                   // compute complement on two
     cp      INT_REG_L, INT_REG_H        // compare checksum
     brne    error_trx                   // error, if computed and transmitted
@@ -87,9 +95,9 @@ wait_startchar:                         // wait on start char of new record
     rjmp    start_new                   //  yes => read in new record
 
 data_end:
-    lds     XH, buffer_count             // anzahl der werte im flash-puffer laden
+    lds     XH, buffer_count            // anzahl der werte im flash-puffer laden
     tst     XH                          // noch werte im puffer?
-    breq    buffer_empty                 // nein
+    breq    buffer_empty                // nein
     rcall   write_buffer                // ja, die restlichen byte im puffer schreiben
     
 buffer_empty:
@@ -152,7 +160,7 @@ get_flash_addr:
 ******************************************************************************/
 buffer_init:
     clr     temp1
-    sts     buffer_count, temp1          // buffer_count = 0
+    sts     buffer_count, temp1         // buffer_count = 0
     ldi     temp1, lo8(flash_buffer)
     sts     buffer_addr, temp1          // low byte of flash buffer addr
     ldi     temp1, hi8(flash_buffer)
