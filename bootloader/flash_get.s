@@ -14,16 +14,16 @@
 flash_get:
     rcall   buffer_init                 // init flash buffer pointer & counter
 
-starte_new:
+start_new:
     rcall   get_rec_val                 // no of data byte in current record
     rcall   get_flash_adr               // read in flash address
     rcall   get_byte                    // data type in record
     tst     INT_REG_L                   // <> 0 = datenende
-    brne    daten_ende                  // ende der datenübertragung
+    brne    data_end                  // ende der datenübertragung
     clr     temp1                       // lösche datencounter
     sts     ist_count, temp1            // noch keine record-daten eingelesen
 
-next_wert:
+next_byte:
     rcall   get_byte                    // ein byte einlesen und kovertieren
     lds     temp1, check_sum            // checksum laden
     add     temp1, INT_REG_L            // aktuellen wert zur checksum addieren
@@ -48,7 +48,7 @@ dont_save:
     sts     ist_count, XH               // und wieder abspeichern
     lds     XL, rec_count               // sollanzahl der werte im aktuellen record
     cp      XL, XH                      // alle datenbytes des records eingelesen?
-    brne    next_wert                   // nein, es sind noch daten im record, weitermachen
+    brne    next_byte                   // nein, es sind noch daten im record, weitermachen
 
     rcall   get_byte                    // der letzte record-wert ist die checksum
     lds     INT_REG_H, check_sum        // lade die aktuelle checksum
@@ -56,24 +56,24 @@ dont_save:
     cp      INT_REG_L, INT_REG_H        // vergleiche die checksum
     brne    error_trx                   // fehler die werte sind nicht gleich!
 
-warte_start:                            // warte auf startzeichen für neuen record
+wait_startchar:                            // warte auf startzeichen für neuen record
     rcall   wait_serial                 // hole zeichen vom com-port	
     tst     CHAR_GET_REG                // teste zeichen
     breq    error_trx                   // kein zeichen = fehler bei der datenübertragung
     cpi     CHAR_GET_REG, STARTCHAR     // ist es das startzeichen?
-    brne    warte_start                 // nein, dann warte
-    rjmp    starte_new                  // neuen record einlesen
+    brne    wait_startchar                 // nein, dann warte
+    rjmp    start_new                  // neuen record einlesen
 
-daten_ende:
+data_end:
     lds     XH, flash_count             // anzahl der werte im flash-puffer laden
     tst     XH                          // noch werte im puffer?
-    breq    keine_daten                 // nein
+    breq    buffer_empty                 // nein
     rcall   write_buffer                // ja, die restlichen byte im puffer schreiben
     
-keine_daten:
+buffer_empty:
     rcall   wait_serial					
     tst     CHAR_GET_REG				
-    brne    keine_daten					
+    brne    buffer_empty					
     ret
 
 /*****************************************
