@@ -62,7 +62,7 @@ main_loop:
     out     IO_REG(ADMUX), temp1
 
 /*
-    blinklicht erzeugen
+    let the status led flash
 */
     brts    loop2                           // if t-flag is set
     sbi     IO_REG(PORTB), PB0              // led on
